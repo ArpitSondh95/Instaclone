@@ -1,13 +1,14 @@
 from django.shortcuts import render, redirect
-from forms import SignUpForm, LoginForm, PostForm
-from models import UserModel, SessionToken, PostModel
+from forms import SignUpForm, LoginForm, PostForm, LikeForm, CommentForm
+from models import UserModel, SessionToken, PostModel, LikeModel, CommentModel
 from django.contrib.auth.hashers import make_password, check_password
-from imgurpython import ImgurClient
+from datetime import timedelta
+from django.utils import timezone
 from Insta_clone.settings import BASE_DIR
+from imgurpython import ImgurClient
 from datetime import timedelta
 from django.utils import timezone
 
-# Create your views here.
 
 def signup_view(request):
     if request.method == "POST":
@@ -17,15 +18,15 @@ def signup_view(request):
             name = form.cleaned_data['name']
             email = form.cleaned_data['email']
             password = form.cleaned_data['password']
-            #saving data to DB
+            # saving data to DB
             user = UserModel(name=name, password=make_password(password), email=email, username=username)
             user.save()
             return render(request, 'success.html')
-            #return redirect('login/')
+            # return redirect('login/')
     else:
         form = SignUpForm()
 
-    return render(request, 'index.html', {'form' : form})
+    return render(request, 'index.html', {'form': form})
 
 
 def login_view(request):
@@ -38,7 +39,6 @@ def login_view(request):
             user = UserModel.objects.filter(username=username).first()
 
             if user:
-                # Check for the password
                 if check_password(password, user.password):
                     token = SessionToken(user=user)
                     token.create_token()
@@ -56,6 +56,23 @@ def login_view(request):
     return render(request, 'login.html', response_data)
 
 
+def like_view(request):
+    user = check_validation(request)
+    if user and request.method == 'POST':
+        form = LikeForm(request.POST)
+        if form.is_valid():
+            post_id = form.cleaned_data.get('post').id
+            existing_like = LikeModel.objects.filter(post_id=post_id, user=user).first()
+            if not existing_like:
+                LikeModel.objects.create(post_id=post_id, user=user)
+            else:
+                existing_like.delete()
+            return redirect('/feed/')
+    else:
+        return redirect('/login/')
+
+
+
 def feed_view(request):
     user = check_validation(request)
     if user:
@@ -64,6 +81,47 @@ def feed_view(request):
     else:
         return redirect('/login/')
 
+def post_view(request):
+    user = check_validation(request)
+
+    if user:
+        if request.method == 'POST':
+            form = PostForm(request.POST, request.FILES)
+            if form.is_valid():
+                image = form.cleaned_data.get('image')
+                caption = form.cleaned_data.get('caption')
+                post = PostModel(user=user, image=image, caption=caption)
+                post.save()
+
+                path = str(BASE_DIR + "\\" + post.image.url)
+
+                client = ImgurClient('3885ef5f1212538', 'b607a83fb4e5d62d3e936075755e3a40eccc7326')
+                post.image_url = client.upload_from_path(path,anon=True)['link']
+                post.save()
+
+                return redirect('/feed/')
+
+        else:
+            form = PostForm()
+        return render(request, 'post.html', {'form' : form})
+    else:
+        return redirect('/login/')
+
+
+def comment_view(request):
+    user = check_validation(request)
+    if user and request.method == 'POST':
+        form = CommentForm(request.POST)
+        if form.is_valid():
+            post_id = form.cleaned_data.get('post').id
+            comment_text = form.cleaned_data.get('comment_text')
+            comment = CommentModel.objects.create(user=user, post_id=post_id, comment_text=comment_text)
+            comment.save()
+            return redirect('/feed/')
+        else:
+            return redirect('/feed/')
+    else:
+        return redirect('/login')
 
 # For validating the session
 def check_validation(request):
@@ -73,25 +131,3 @@ def check_validation(request):
             return session.user
     else:
         return None
-
-
-def post_view(request):
-    user = check_validation(request)
-
-    if user:
-        if request.METHOD == 'GET':
-            form = PostForm()
-            return render(request, 'post.html', {'form': form})
-        elif request.method == 'POST':
-            form = PostForm(request.POST, request.FILES)
-            if form.is_valid():
-                image = form.cleaned_data.get('image')
-                caption = form.cleaned_data.get('caption')
-                post = PostModel(user=user, image=image, caption=caption)
-                path = str(BASE_DIR +'\\' + post.image.url)
-                client = ImgurClient("eba875c9581f18e","dc6babb5552228fe1f1909685fb6d8f12aa13edb" )
-                post.image_url = client.upload_from_path(path, anon=True)['link']
-                post.save()
-                return redirect('/feed/')
-        else:
-            return('/login/')
