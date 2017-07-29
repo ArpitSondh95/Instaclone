@@ -161,28 +161,28 @@ def logout_view(request):
 def upvote_view(request):
     user = check_validation(request)
     comment = None
-    print "upvote view"
+
+    print ("upvote view")
     if user and request.method == 'POST':
 
         form = UpvoteForm(request.POST)
         if form.is_valid():
-            print form.cleaned_data
 
             comment_id = int(form.cleaned_data.get('id'))
 
-            comment = Comment.objects.filter(id=comment_id).first()
-            print "upvoted not yet"
+            comment = CommentModel.objects.filter(id=comment_id).first()
+            print ("upvoted not yet")
 
             if comment is not None:
                 # print ' unliking post'
-                print "upvoted"
+                print ("upvoted")
                 comment.upvote_num += 1
                 comment.save()
-                print comment.upvote_num
+                print (comment.upvote_num)
             else:
-                print 'stupid mistake'
+                print ('stupid mistake')
                 #liked_msg = 'Unliked!'
 
-        return redirect('/login_success/')
+        return redirect('/Feed/')
     else:
-        return redirect('/login/')
+        return redirect('/Feed/')
