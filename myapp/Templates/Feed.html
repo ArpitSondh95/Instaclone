@@ -14,7 +14,12 @@
     </style>
 </head>
 <body>
-    <a href="http://127.0.0.1:8000/"><h3>Logout</h3></a>
+    <div style="float: right; padding: 20px;  ">
+        <form action="/logout/" method="POST">
+            {% csrf_token %}
+             <input type="submit" class="btn btn-default" value="Logout">
+        </form>
+    </div>
 
     <form method="post" action="/post/">
         {% csrf_token %}
