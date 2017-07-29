@@ -2,8 +2,6 @@ from django.shortcuts import render, redirect
 from forms import SignUpForm, LoginForm, PostForm, LikeForm, CommentForm
 from models import UserModel, SessionToken, PostModel, LikeModel, CommentModel
 from django.contrib.auth.hashers import make_password, check_password
-from datetime import timedelta
-from django.utils import timezone
 from Insta_clone.settings import BASE_DIR
 from imgurpython import ImgurClient
 from datetime import timedelta
@@ -128,6 +126,8 @@ def check_validation(request):
     if request.COOKIES.get('session_token'):
         session = SessionToken.objects.filter(session_token=request.COOKIES.get('session_token')).first()
         if session:
-            return session.user
+            time_to_live = session.created_on + timedelta(days=1)
+            if time_to_live > timezone.now():
+                return session.user
     else:
         return None
