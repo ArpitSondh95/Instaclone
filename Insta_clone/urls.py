@@ -11,5 +11,5 @@ urlpatterns = [
     url('like/', like_view),
     url('logout/', logout_view),
     url('upvote/', upvote_view),
-    url('', signup_view)
+    url('signup/', signup_view)
 ]

@@ -153,7 +153,7 @@ def logout_view(request):
         latest_sessn = SessionToken.objects.filter(user=user).last()
         if latest_sessn:
             latest_sessn.delete()
-            return redirect("/login/")
+            return redirect("/signup/")
             # how to get cookies in python to delete cookie n session
 
 
