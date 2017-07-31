@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 from django.shortcuts import render, redirect
-from forms import SignUpForm, LoginForm, PostForm, LikeForm, CommentForm, UpvoteForm
+from forms import SignUpForm, LoginForm, PostForm, LikeForm, CommentForm, UpvoteForm, SearchForm
 from models import UserModel, SessionToken, PostModel, LikeModel, CommentModel
 from django.contrib.auth.hashers import make_password, check_password
 from Insta_clone.settings import BASE_DIR
@@ -183,6 +183,23 @@ def upvote_view(request):
                 print ('stupid mistake')
                 #liked_msg = 'Unliked!'
 
-        return redirect('/Feed/')
+        return redirect('/feed/')
     else:
-        return redirect('/Feed/')
+        return redirect('/feed/')
+
+def query_based_search_view(request):
+
+    user = check_validation(request)
+    if user:
+        if request.method == "POST":
+            searchForm = SearchForm(request.POST)
+            if searchForm.is_valid():
+                print 'valid'
+                username_query = searchForm.cleaned_data.get('searchquery')
+                user_with_query = UserModel.objects.filter(username=username_query).first();
+                posts = PostModel.objects.filter(user=user_with_query)
+                return render(request, 'Feed.html',{'posts':posts})
+            else:
+                return redirect('/feed/')
+    else:
+        return redirect('/login/')
