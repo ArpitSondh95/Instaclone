@@ -1,4 +1,5 @@
 from __future__ import unicode_literals
+from django.contrib.sessions.backends import db
 from django.db import models
 import uuid
 
